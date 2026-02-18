@@ -4,6 +4,7 @@ import in.ajildev.saas_subscription_billing.dto.AuthRequest;
 import in.ajildev.saas_subscription_billing.dto.AuthResponse;
 import in.ajildev.saas_subscription_billing.dto.SignupRequest;
 import in.ajildev.saas_subscription_billing.entity.User;
+import in.ajildev.saas_subscription_billing.exception.EmailAlreadyExistsException;
 import in.ajildev.saas_subscription_billing.repository.UserRepository;
 import in.ajildev.saas_subscription_billing.security.JwtUtil;
 import in.ajildev.saas_subscription_billing.security.UserDetailsServiceImpl;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +28,7 @@ public class AuthService {
 
     public AuthResponse signup(SignupRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new EmailAlreadyExistsException("Email already exists");
         }
 
         User user = User.builder()
@@ -56,7 +58,8 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
-        User user = userRepository.findByEmail(request.getEmail()).orElseThrow();
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("Email does not exist"));
 
         String accessToken = jwtUtil.generateAccessToken(userDetails);
         String refreshToken = jwtUtil.generateRefreshToken(userDetails);

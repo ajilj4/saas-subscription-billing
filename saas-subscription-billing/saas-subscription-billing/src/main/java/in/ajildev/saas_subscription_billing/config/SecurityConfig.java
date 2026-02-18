@@ -6,8 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -56,7 +54,24 @@ public class SecurityConfig {
                 // Stateless session — no server-side sessions, JWT only
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-
+                // Exception handling — return JSON for 401 and 403
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setContentType("application/json");
+                            response.setStatus(401);
+                            response.getWriter()
+                                    .write("{\"status\": 401, \"message\": \"Unauthorized: "
+                                            + authException.getMessage() + "\", \"timestamp\": \""
+                                            + java.time.LocalDateTime.now() + "\"}");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setContentType("application/json");
+                            response.setStatus(403);
+                            response.getWriter()
+                                    .write("{\"status\": 403, \"message\": \"Access Denied: "
+                                            + accessDeniedException.getMessage() + "\", \"timestamp\": \""
+                                            + java.time.LocalDateTime.now() + "\"}");
+                        }))
 
                 // Register JWT filter BEFORE Spring's default username/password filter
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
@@ -65,8 +80,6 @@ public class SecurityConfig {
     }
 
     // ─── Authentication Provider ─────────────────────────────────────────────────
-
-
 
     // ─── Authentication Manager ──────────────────────────────────────────────────
 
