@@ -85,7 +85,6 @@ public class SubscriptionService {
         // 1. Verify Signature
         try {
             String secret = razorpaySecret;
-            String data = orderId + "|" + paymentId;
             boolean isValid = Utils.verifyPaymentSignature(new org.json.JSONObject()
                     .put("razorpay_order_id", orderId)
                     .put("razorpay_payment_id", paymentId)

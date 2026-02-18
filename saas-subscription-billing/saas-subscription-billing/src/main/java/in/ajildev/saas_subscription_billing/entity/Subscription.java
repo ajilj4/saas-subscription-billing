@@ -34,6 +34,7 @@ public class Subscription {
     private Plan plan;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private SubscriptionStatus status;
 
     private LocalDateTime startDate;

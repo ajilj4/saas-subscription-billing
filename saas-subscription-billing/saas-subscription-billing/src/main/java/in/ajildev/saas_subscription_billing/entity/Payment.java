@@ -34,6 +34,7 @@ public class Payment {
     private Subscription subscription;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private PaymentGateway gateway;
 
     @Column(nullable = false)
@@ -42,6 +43,7 @@ public class Payment {
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private PaymentStatus status;
 
     @CreationTimestamp
