@@ -19,63 +19,10 @@ const Pricing = () => {
 
     useEffect(() => {
         dispatch(getPlans());
-
-        // Load Razorpay script
-        const script = document.createElement('script');
-        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        script.async = true;
-        document.body.appendChild(script);
-
-        return () => {
-            document.body.removeChild(script);
-        };
     }, [dispatch]);
 
-    const handleSubscription = async (planId) => {
-        if (!user) {
-            navigate('/login');
-            return;
-        }
-
-        try {
-            const resultAction = await dispatch(initiateSubscription(planId));
-            if (initiateSubscription.fulfilled.match(resultAction)) {
-                const orderData = resultAction.payload;
-
-                const options = {
-                    key: orderData.key,
-                    amount: orderData.amount,
-                    currency: orderData.currency,
-                    name: orderData.name,
-                    description: orderData.description,
-                    order_id: orderData.orderId,
-                    handler: async (response) => {
-                        const activationData = {
-                            orderId: response.razorpay_order_id,
-                            paymentId: response.razorpay_payment_id,
-                            signature: response.razorpay_signature,
-                        };
-
-                        const activateResult = await dispatch(activateSubscription(activationData));
-                        if (activateSubscription.fulfilled.match(activateResult)) {
-                            navigate('/dashboard');
-                        }
-                    },
-                    prefill: {
-                        name: user.name,
-                        email: user.email,
-                    },
-                    theme: {
-                        color: '#2563eb',
-                    },
-                };
-
-                const rzp = new window.Razorpay(options);
-                rzp.open();
-            }
-        } catch (err) {
-            console.error('Payment initiation failed:', err);
-        }
+    const handleSubscription = (planId) => {
+        navigate(`/checkout/${planId}`);
     };
 
     if (plansLoading) {
@@ -133,8 +80,8 @@ const Pricing = () => {
                                 onClick={() => handleSubscription(plan.id)}
                                 disabled={subLoading}
                                 className={`w-full py-4 px-6 rounded-2xl font-bold transition-all mb-8 ${plan.name.toLowerCase().includes('pro')
-                                        ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-500/25'
-                                        : 'bg-gray-900 text-white hover:bg-gray-800'
+                                    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-500/25'
+                                    : 'bg-gray-900 text-white hover:bg-gray-800'
                                     } flex items-center justify-center gap-2`}
                             >
                                 {subLoading ? <Loader2 className="animate-spin" size={20} /> : 'Get Started'}

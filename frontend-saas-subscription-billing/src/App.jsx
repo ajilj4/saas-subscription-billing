@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import Pricing from './pages/Pricing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import Checkout from './pages/Checkout';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/checkout/:planId" element={<Checkout />} />
         </Route>
       </Routes>
     </Router>
