@@ -1,5 +1,6 @@
 package in.ajildev.saas_subscription_billing.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -44,10 +45,12 @@ public class User {
 
     @Builder.Default
     @OneToMany(mappedBy = "user")
+    @JsonIgnore
     private List<Subscription> subscriptions = new ArrayList<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "user")
+    @JsonIgnore
     private List<Payment> payments = new ArrayList<>();
 
 }
