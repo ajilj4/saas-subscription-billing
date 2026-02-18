@@ -1,0 +1,111 @@
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import axios from 'axios';
+
+const API_URL = 'http://localhost:9000/api/subscriptions';
+
+// Helper to get auth header
+const getAuthHeader = (thunkAPI) => {
+    const token = thunkAPI.getState().auth.user?.token;
+    return {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    };
+};
+
+export const initiateSubscription = createAsyncThunk(
+    'subscription/initiate',
+    async (planId, thunkAPI) => {
+        try {
+            const config = getAuthHeader(thunkAPI);
+            const response = await axios.post(`${API_URL}/initiate`, { planId }, config);
+            return response.data;
+        } catch (error) {
+            const message = error.response?.data?.message || error.message || error.toString();
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
+
+export const activateSubscription = createAsyncThunk(
+    'subscription/activate',
+    async (paymentData, thunkAPI) => {
+        try {
+            const config = getAuthHeader(thunkAPI);
+            const response = await axios.post(`${API_URL}/activate`, paymentData, config);
+            return response.data;
+        } catch (error) {
+            const message = error.response?.data?.message || error.message || error.toString();
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
+
+export const getCurrentSubscription = createAsyncThunk(
+    'subscription/getCurrent',
+    async (_, thunkAPI) => {
+        try {
+            const config = getAuthHeader(thunkAPI);
+            const response = await axios.get(`${API_URL}/current`, config);
+            return response.data;
+        } catch (error) {
+            const message = error.response?.data?.message || error.message || error.toString();
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
+
+const initialState = {
+    currentSubscription: null,
+    isError: false,
+    isSuccess: false,
+    isLoading: false,
+    message: '',
+};
+
+export const subscriptionSlice = createSlice({
+    name: 'subscription',
+    initialState,
+    reducers: {
+        resetSubscription: (state) => {
+            state.isError = false;
+            state.isSuccess = false;
+            state.isLoading = false;
+            state.message = '';
+        },
+    },
+    extraReducers: (builder) => {
+        builder
+            .addCase(initiateSubscription.pending, (state) => {
+                state.isLoading = true;
+            })
+            .addCase(initiateSubscription.fulfilled, (state) => {
+                state.isLoading = false;
+                state.isSuccess = true;
+            })
+            .addCase(initiateSubscription.rejected, (state, action) => {
+                state.isLoading = false;
+                state.isError = true;
+                state.message = action.payload;
+            })
+            .addCase(activateSubscription.pending, (state) => {
+                state.isLoading = true;
+            })
+            .addCase(activateSubscription.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.isSuccess = true;
+                state.message = action.payload;
+            })
+            .addCase(activateSubscription.rejected, (state, action) => {
+                state.isLoading = false;
+                state.isError = true;
+                state.message = action.payload;
+            })
+            .addCase(getCurrentSubscription.fulfilled, (state, action) => {
+                state.currentSubscription = action.payload;
+            });
+    },
+});
+
+export const { resetSubscription } = subscriptionSlice.actions;
+export default subscriptionSlice.reducer;
