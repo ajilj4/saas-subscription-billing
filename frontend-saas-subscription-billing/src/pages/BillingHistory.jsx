@@ -1,17 +1,18 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getCurrentSubscription } from '../features/subscriptions/subscriptionSlice';
+import { getCurrentSubscription, getPaymentHistory } from '../features/subscriptions/subscriptionSlice';
 import DashboardNavbar from '../components/DashboardNavbar';
-import { Receipt, Calendar, CreditCard, ArrowLeft, Download, ExternalLink, ShieldCheck } from 'lucide-react';
+import { Receipt, Calendar, CreditCard, ArrowLeft, Download, ExternalLink, ShieldCheck, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const BillingHistory = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { currentSubscription } = useSelector((state) => state.subscription);
+    const { paymentHistory } = useSelector((state) => state.subscription);
 
     useEffect(() => {
         dispatch(getCurrentSubscription());
+        dispatch(getPaymentHistory());
     }, [dispatch]);
 
     const formatDate = (dateString) => {
@@ -25,8 +26,8 @@ const BillingHistory = () => {
         });
     };
 
-    // Extract payments from current subscription (or mock if empty)
-    const payments = currentSubscription?.payments || [];
+    // Extract payments from the new dedicated paymentHistory state
+    const payments = paymentHistory || [];
 
     return (
         <div className="min-h-screen bg-gray-50 text-slate-900">
@@ -98,8 +99,8 @@ const BillingHistory = () => {
                                             <td className="px-8 py-6">
                                                 <div className="flex justify-center">
                                                     <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${payment.status === 'SUCCESS'
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : 'bg-yellow-100 text-yellow-700'
+                                                        ? 'bg-green-100 text-green-700'
+                                                        : 'bg-yellow-100 text-yellow-700'
                                                         }`}>
                                                         {payment.status}
                                                     </span>

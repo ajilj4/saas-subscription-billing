@@ -55,8 +55,23 @@ export const getCurrentSubscription = createAsyncThunk(
     }
 );
 
+export const getPaymentHistory = createAsyncThunk(
+    'subscription/getPaymentHistory',
+    async (_, thunkAPI) => {
+        try {
+            const config = getAuthHeader(thunkAPI);
+            const response = await axios.get('http://localhost:9000/api/payments/me', config);
+            return response.data;
+        } catch (error) {
+            const message = error.response?.data?.message || error.message || error.toString();
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
+
 const initialState = {
     currentSubscription: null,
+    paymentHistory: [],
     isError: false,
     isSuccess: false,
     isLoading: false,
@@ -86,6 +101,7 @@ export const subscriptionSlice = createSlice({
             .addCase(initiateSubscription.rejected, (state, action) => {
                 state.isLoading = false;
                 state.isError = true;
+                state.isSuccess = false;
                 state.message = action.payload;
             })
             .addCase(activateSubscription.pending, (state) => {
@@ -99,10 +115,14 @@ export const subscriptionSlice = createSlice({
             .addCase(activateSubscription.rejected, (state, action) => {
                 state.isLoading = false;
                 state.isError = true;
+                state.isSuccess = false;
                 state.message = action.payload;
             })
             .addCase(getCurrentSubscription.fulfilled, (state, action) => {
                 state.currentSubscription = action.payload;
+            })
+            .addCase(getPaymentHistory.fulfilled, (state, action) => {
+                state.paymentHistory = action.payload;
             });
     },
 });
