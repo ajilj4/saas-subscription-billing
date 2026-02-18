@@ -5,6 +5,7 @@ import Pricing from './pages/Pricing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Checkout from './pages/Checkout';
+import BillingHistory from './pages/BillingHistory';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/checkout/:planId" element={<Checkout />} />
+          <Route path="/billing-history" element={<BillingHistory />} />
         </Route>
       </Routes>
     </Router>

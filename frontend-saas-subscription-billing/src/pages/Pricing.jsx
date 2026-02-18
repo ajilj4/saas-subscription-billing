@@ -52,13 +52,13 @@ const Pricing = () => {
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {plans.map((plan) => (
+                    {Array.isArray(plans) && plans.map((plan) => (
                         <div
                             key={plan.id}
-                            className={`relative bg-white rounded-3xl p-8 border ${plan.name.toLowerCase().includes('pro') ? 'border-2 border-blue-500 shadow-2xl scale-105' : 'border-gray-200 shadow-xl'
+                            className={`relative bg-white rounded-3xl p-8 border ${plan.name?.toLowerCase().includes('pro') ? 'border-2 border-blue-500 shadow-2xl scale-105' : 'border-gray-200 shadow-xl'
                                 } transition-all hover:translate-y-[-8px]`}
                         >
-                            {plan.name.toLowerCase().includes('pro') && (
+                            {plan.name?.toLowerCase().includes('pro') && (
                                 <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-4">
                                     <span className="bg-blue-600 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg flex items-center gap-1.5">
                                         <Zap size={14} fill="currentColor" /> Popular
@@ -79,7 +79,7 @@ const Pricing = () => {
                             <button
                                 onClick={() => handleSubscription(plan.id)}
                                 disabled={subLoading}
-                                className={`w-full py-4 px-6 rounded-2xl font-bold transition-all mb-8 ${plan.name.toLowerCase().includes('pro')
+                                className={`w-full py-4 px-6 rounded-2xl font-bold transition-all mb-8 ${plan.name?.toLowerCase().includes('pro')
                                     ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-500/25'
                                     : 'bg-gray-900 text-white hover:bg-gray-800'
                                     } flex items-center justify-center gap-2`}

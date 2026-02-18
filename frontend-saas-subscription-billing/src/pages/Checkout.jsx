@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getPlans } from '../features/plans/planSlice';
 import { initiateSubscription, activateSubscription, resetSubscription } from '../features/subscriptions/subscriptionSlice';
 import { CreditCard, ShieldCheck, CheckCircle2, Loader2, AlertCircle, ArrowLeft, Zap, Sparkles } from 'lucide-react';
+import { loadScript } from '../utils/loadScript';
 
 const Checkout = () => {
     const { planId } = useParams();
@@ -11,6 +12,7 @@ const Checkout = () => {
     const dispatch = useDispatch();
 
     const [selectedGateway, setSelectedGateway] = useState('razorpay');
+    const [scriptLoaded, setScriptLoaded] = useState(false);
 
     const { plans } = useSelector((state) => state.plans);
     const { user } = useSelector((state) => state.auth);
@@ -21,29 +23,38 @@ const Checkout = () => {
     useEffect(() => {
         if (plans.length === 0) dispatch(getPlans());
 
-        const script = document.createElement('script');
-        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        script.async = true;
-        document.body.appendChild(script);
-
-        return () => {
-            document.body.removeChild(script);
-            dispatch(resetSubscription());
+        const initializeRazorpay = async () => {
+            const res = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+            if (!res) {
+                alert('Razorpay SDK failed to load. Are you online?');
+                return;
+            }
+            setScriptLoaded(true);
         };
+        initializeRazorpay();
+
+        return () => dispatch(resetSubscription());
     }, [dispatch, plans.length]);
 
     const handlePayment = async () => {
+        if (!scriptLoaded && selectedGateway === 'razorpay') {
+            alert('Razorpay SDK is still loading. Please wait a moment.');
+            return;
+        }
+
         if (selectedGateway === 'razorpay') {
             try {
                 const resultAction = await dispatch(initiateSubscription(planId));
                 if (initiateSubscription.fulfilled.match(resultAction)) {
                     const orderData = resultAction.payload;
+
                     const options = {
                         key: orderData.key,
                         amount: orderData.amount,
                         currency: orderData.currency,
-                        name: orderData.name,
-                        description: orderData.description,
+                        name: 'SaaS Subscription',
+                        description: `Purchase of ${plan.name} Plan`,
+                        image: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png', // Professional placeholder logo
                         order_id: orderData.orderId,
                         handler: async (response) => {
                             const activationData = {
@@ -54,8 +65,20 @@ const Checkout = () => {
                             const activateResult = await dispatch(activateSubscription(activationData));
                             if (activateSubscription.fulfilled.match(activateResult)) navigate('/dashboard');
                         },
-                        prefill: { name: user.name, email: user.email },
+                        prefill: {
+                            name: user?.name || 'Customer',
+                            email: user?.email || ''
+                        },
+                        notes: {
+                            plan_id: planId,
+                            user_id: user?.id
+                        },
                         theme: { color: '#2563eb' },
+                        modal: {
+                            ondismiss: () => {
+                                console.log('Checkout modal was closed');
+                            }
+                        }
                     };
                     const rzp = new window.Razorpay(options);
                     rzp.open();

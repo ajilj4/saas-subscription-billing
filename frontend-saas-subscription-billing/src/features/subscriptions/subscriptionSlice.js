@@ -5,7 +5,7 @@ const API_URL = 'http://localhost:9000/api/subscriptions';
 
 // Helper to get auth header
 const getAuthHeader = (thunkAPI) => {
-    const token = thunkAPI.getState().auth.user?.token;
+    const token = thunkAPI.getState().auth.user?.accessToken;
     return {
         headers: {
             Authorization: `Bearer ${token}`,
