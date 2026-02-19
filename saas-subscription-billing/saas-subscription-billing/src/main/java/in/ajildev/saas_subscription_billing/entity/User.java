@@ -53,4 +53,10 @@ public class User {
     @JsonIgnore
     private List<Payment> payments = new ArrayList<>();
 
+    // Payout Beneficiary Details
+    private String payoutAccountNo;
+    private String payoutIfsc;
+    private String payoutBeneficiaryName;
+    private String payoutBankName;
+
 }

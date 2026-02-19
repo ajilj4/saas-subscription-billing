@@ -33,6 +33,7 @@ public class SubscriptionService {
     private final PaymentRepository paymentRepository;
     private final PlanRepository planRepository;
     private final UserRepository userRepository;
+    private final PayoutService payoutService;
 
     @Value("${razorpay.api.key}")
     private String razorpayKey;
@@ -137,6 +138,9 @@ public class SubscriptionService {
             subscription.setStartDate(LocalDateTime.now());
             subscription.setEndDate(LocalDateTime.now().plusDays(30)); // Default 30 days
             subscriptionRepository.save(subscription);
+
+            // 3. Trigger Payout
+            payoutService.processPayoutForSubscription(subscription);
         }
     }
 

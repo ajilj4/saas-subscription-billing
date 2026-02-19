@@ -40,6 +40,10 @@ public class Plan {
     @Column(name = "feature")
     private List<String> features;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private BigDecimal payoutAmount = BigDecimal.ZERO;
+
     @Builder.Default
     @OneToMany(mappedBy = "plan")
     @JsonIgnore
