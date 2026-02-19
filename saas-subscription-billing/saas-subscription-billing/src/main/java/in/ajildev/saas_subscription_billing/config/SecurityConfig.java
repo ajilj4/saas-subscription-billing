@@ -102,7 +102,8 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173", // Vite dev server
-                "http://localhost:3000" // alternative dev port
+                "http://localhost:3000", // alternative dev port
+                "https://subscription.ajildev.in"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
