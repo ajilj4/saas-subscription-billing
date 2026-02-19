@@ -42,19 +42,19 @@ const Checkout = () => {
             return;
         }
 
-        if (selectedGateway === 'razorpay') {
-            try {
-                const resultAction = await dispatch(initiateSubscription(planId));
-                if (initiateSubscription.fulfilled.match(resultAction)) {
-                    const orderData = resultAction.payload;
+        try {
+            const resultAction = await dispatch(initiateSubscription({ planId, gateway: selectedGateway }));
+            if (initiateSubscription.fulfilled.match(resultAction)) {
+                const orderData = resultAction.payload;
 
+                if (selectedGateway === 'razorpay') {
                     const options = {
                         key: orderData.key,
                         amount: orderData.amount,
                         currency: orderData.currency,
                         name: 'SaaS Subscription',
                         description: `Purchase of ${plan.name} Plan`,
-                        image: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png', // Professional placeholder logo
+                        image: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
                         order_id: orderData.orderId,
                         handler: async (response) => {
                             const activationData = {
@@ -82,12 +82,16 @@ const Checkout = () => {
                     };
                     const rzp = new window.Razorpay(options);
                     rzp.open();
+                } else if (selectedGateway === 'paynpro') {
+                    if (orderData.payUrl) {
+                        window.location.href = orderData.payUrl;
+                    } else {
+                        console.error('Paynpro redirect URL not found');
+                    }
                 }
-            } catch (err) {
-                console.error('Payment initiation failed:', err);
             }
-        } else {
-            alert('Paynpro integration coming soon!');
+        } catch (err) {
+            console.error('Payment initiation failed:', err);
         }
     };
 

@@ -15,10 +15,10 @@ const getAuthHeader = (thunkAPI) => {
 
 export const initiateSubscription = createAsyncThunk(
     'subscription/initiate',
-    async (planId, thunkAPI) => {
+    async ({ planId, gateway }, thunkAPI) => {
         try {
             const config = getAuthHeader(thunkAPI);
-            const response = await axios.post(`${API_URL}/initiate`, { planId }, config);
+            const response = await axios.post(`${API_URL}/initiate`, { planId, gateway }, config);
             return response.data;
         } catch (error) {
             const message = error.response?.data?.message || error.message || error.toString();
