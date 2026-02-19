@@ -7,6 +7,8 @@ import Signup from './pages/Signup';
 import Checkout from './pages/Checkout';
 import BillingHistory from './pages/BillingHistory';
 import ProtectedRoute from './components/ProtectedRoute';
+import PayoutSettings from './pages/PayoutSettings';
+import AdminPayoutDashboard from './pages/AdminPayoutDashboard';
 
 function App() {
   return (
@@ -22,7 +24,9 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/checkout/:planId" element={<Checkout />} />
-          <Route path="/billing-history" element={<BillingHistory />} />
+          <Route path="/billing-history" element={<BillingHistory />} />git 
+          <Route path="/payouts" element={<PayoutSettings />} />
+          <Route path="/admin/payouts" element={<AdminPayoutDashboard />} />
         </Route>
       </Routes>
     </Router>

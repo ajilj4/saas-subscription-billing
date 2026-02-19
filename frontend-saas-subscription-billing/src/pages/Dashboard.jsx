@@ -12,7 +12,9 @@ import {
     Calendar,
     CreditCard,
     History,
-    ArrowUpRight
+    ArrowUpRight,
+    Building2,
+    Save
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -111,9 +113,9 @@ const Dashboard = () => {
 
                         {/* Quick Actions / Future Sections */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div 
+                            <div
                                 onClick={() => navigate('/billing-history')}
-                            className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
+                                className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
                                 <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-all">
                                     <History size={24} />
                                 </div>
@@ -148,6 +150,48 @@ const Dashboard = () => {
                             <div className="absolute -bottom-10 -right-10 opacity-10">
                                 <AlertCircle size={150} />
                             </div>
+                        </div>
+
+                        <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">
+                            <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                                <Building2 size={20} className="text-blue-600" />
+                                Bank Details
+                            </h3>
+                            {user?.payoutAccountNo ? (
+                                <div className="space-y-4">
+                                    <div className="p-4 bg-gray-50 rounded-2xl">
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Beneficiary</p>
+                                        <p className="font-bold text-gray-900 truncate">{user?.payoutBeneficiaryName}</p>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="p-4 bg-gray-50 rounded-2xl">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Bank</p>
+                                            <p className="font-bold text-gray-900 truncate">{user?.payoutBankName}</p>
+                                        </div>
+                                        <div className="p-4 bg-gray-50 rounded-2xl">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">A/C No.</p>
+                                            <p className="font-bold text-gray-900 truncate">****{user?.payoutAccountNo?.slice(-4)}</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => navigate('/payouts')}
+                                        className="w-full text-blue-600 font-bold text-sm hover:underline py-2"
+                                    >
+                                        Edit Details
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="text-center py-4">
+                                    <p className="text-sm text-gray-500 font-medium mb-4">No bank details added yet.</p>
+                                    <button
+                                        onClick={() => navigate('/payouts')}
+                                        className="w-full bg-blue-50 text-blue-600 py-3 rounded-2xl font-bold hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <Save size={18} />
+                                        ADD DETAILS
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm">

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout, reset as authReset } from '../features/auth/authSlice';
-import { Zap, LogOut, User, LayoutDashboard, CreditCard } from 'lucide-react';
+import { Zap, LogOut, User, LayoutDashboard, CreditCard, Banknote, ShieldAlert } from 'lucide-react';
 
 const DashboardNavbar = () => {
     const dispatch = useDispatch();
@@ -40,6 +40,20 @@ const DashboardNavbar = () => {
                             >
                                 <Zap size={16} /> Plans
                             </button>
+                            <button
+                                onClick={() => navigate('/payouts')}
+                                className="text-gray-600 hover:text-blue-600 font-medium text-sm flex items-center gap-2"
+                            >
+                                <Banknote size={16} /> Payouts
+                            </button>
+                            {user?.role === 'ADMIN' && (
+                                <button
+                                    onClick={() => navigate('/admin/payouts')}
+                                    className="text-indigo-600 hover:text-indigo-800 font-bold text-sm flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100 transition-all"
+                                >
+                                    <ShieldAlert size={16} /> Admin Payouts
+                                </button>
+                            )}
                         </div>
                     </div>
 
