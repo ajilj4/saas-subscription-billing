@@ -28,6 +28,7 @@ import java.util.Map;
 public class SubscriptionService {
 
     private final RazorpayService razorpayService;
+    private final PaynProService paynProService;
     private final SubscriptionRepository subscriptionRepository;
     private final PaymentRepository paymentRepository;
     private final PlanRepository planRepository;
@@ -40,15 +41,49 @@ public class SubscriptionService {
     private String razorpaySecret;
 
     @Transactional
-    public Map<String, Object> initiateSubscription(Long planId, String email) throws RazorpayException {
+    public Map<String, Object> initiateSubscription(Long planId, String email, String gateway)
+            throws RazorpayException {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         Plan plan = planRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Plan not found"));
 
-        // 1. Create Razorpay Order
-        String receiptId = "txn_" + System.currentTimeMillis();
-        Order razorpayOrder = razorpayService.createOrder(plan.getPrice(), receiptId);
+        PaymentGateway selectedGateway = PaymentGateway.valueOf(gateway.toUpperCase());
+        Map<String, Object> response = new HashMap<>();
+        String txnId = "";
+
+        if (selectedGateway == PaymentGateway.RAZORPAY) {
+            // 1. Create Razorpay Order
+            String receiptId = "txn_" + System.currentTimeMillis();
+            Order razorpayOrder = razorpayService.createOrder(plan.getPrice(), receiptId);
+            txnId = razorpayOrder.get("id");
+
+            response.put("orderId", txnId);
+            response.put("amount", razorpayOrder.get("amount"));
+            response.put("currency", "INR");
+            response.put("key", razorpayKey);
+            response.put("name", "SaaS Subcription");
+            response.put("description", "Subscription for " + plan.getName());
+        } else if (selectedGateway == PaymentGateway.PAYNPRO) {
+            // 1. Create Paynpro Order
+            String tradeNo = "PNP_" + System.currentTimeMillis();
+            org.json.JSONObject paynproOrder = paynProService.createOrder(
+                    plan.getPrice().doubleValue(),
+                    tradeNo,
+                    user.getName(),
+                    user.getEmail(),
+                    "0000000000" // Placeholder for missing mobile
+            );
+
+            // Based on expected Paynpro response structure
+            if (paynproOrder.has("data") && paynproOrder.getJSONObject("data").has("payUrl")) {
+                txnId = tradeNo;
+                response.put("payUrl", paynproOrder.getJSONObject("data").getString("payUrl"));
+                response.put("tradeNo", tradeNo);
+            } else {
+                throw new RuntimeException("Paynpro initiation failed: " + paynproOrder.toString());
+            }
+        }
 
         // 2. Create Pending Subscription
         Subscription subscription = Subscription.builder()
@@ -62,20 +97,12 @@ public class SubscriptionService {
         Payment payment = Payment.builder()
                 .user(user)
                 .subscription(subscription)
-                .gateway(PaymentGateway.RAZORPAY)
-                .txnId(razorpayOrder.get("id"))
+                .gateway(selectedGateway)
+                .txnId(txnId)
                 .amount(plan.getPrice())
                 .status(PaymentStatus.PENDING)
                 .build();
         paymentRepository.save(payment);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("orderId", razorpayOrder.get("id"));
-        response.put("amount", razorpayOrder.get("amount"));
-        response.put("currency", "INR");
-        response.put("key", razorpayKey);
-        response.put("name", "SaaS Subcription");
-        response.put("description", "Subscription for " + plan.getName());
 
         return response;
     }

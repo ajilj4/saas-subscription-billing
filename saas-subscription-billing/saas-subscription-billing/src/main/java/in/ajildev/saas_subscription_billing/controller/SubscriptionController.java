@@ -20,11 +20,13 @@ public class SubscriptionController {
 
     @PostMapping("/initiate")
     public ResponseEntity<Map<String, Object>> initiate(
-            @RequestBody Map<String, Long> request,
+            @RequestBody Map<String, Object> request,
             @AuthenticationPrincipal UserDetails userDetails) throws RazorpayException {
 
-        Long planId = request.get("planId");
-        return ResponseEntity.ok(subscriptionService.initiateSubscription(planId, userDetails.getUsername()));
+        Long planId = Long.valueOf(request.get("planId").toString());
+        String gateway = (String) request.getOrDefault("gateway", "razorpay");
+
+        return ResponseEntity.ok(subscriptionService.initiateSubscription(planId, userDetails.getUsername(), gateway));
     }
 
     @PostMapping("/activate")

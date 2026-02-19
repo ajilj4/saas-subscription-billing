@@ -6,6 +6,7 @@ import in.ajildev.saas_subscription_billing.enums.PaymentStatus;
 import in.ajildev.saas_subscription_billing.enums.SubscriptionStatus;
 import in.ajildev.saas_subscription_billing.repository.PaymentRepository;
 import in.ajildev.saas_subscription_billing.repository.SubscriptionRepository;
+import in.ajildev.saas_subscription_billing.service.PaynProService;
 import in.ajildev.saas_subscription_billing.service.RazorpayService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,8 @@ public class WebhookController {
     private final RazorpayService razorpayService;
     private final PaymentRepository paymentRepository;
     private final SubscriptionRepository subscriptionRepository;
+
+    private final PaynProService paynProService;
 
     @Value("${razorpay.webhook.secret}")
     private String webhookSecret;
@@ -82,5 +85,37 @@ public class WebhookController {
         }
 
         return ResponseEntity.ok("Webhook processed successfully");
+    }
+
+    @PostMapping("/paynpro")
+    public ResponseEntity<String> handlePaynproWebhook(
+            @RequestBody java.util.Map<String, Object> payload) {
+
+        log.info("Received Paynpro Webhook: {}", payload);
+
+        // Note: Signature verification depends on Paynpro's response format
+        // For now, we activate based on success status
+        String status = (String) payload.get("status");
+        String tradeNo = (String) payload.get("tradeNo");
+
+        if ("SUCCESS".equalsIgnoreCase(status) || "PAID".equalsIgnoreCase(status)) {
+            Payment payment = paymentRepository.findByTxnId(tradeNo)
+                    .orElseThrow(() -> new RuntimeException("Payment record not found for Trade No: " + tradeNo));
+
+            if (payment.getStatus() == PaymentStatus.PENDING) {
+                payment.setStatus(PaymentStatus.SUCCESS);
+                paymentRepository.save(payment);
+
+                Subscription subscription = payment.getSubscription();
+                subscription.setStatus(SubscriptionStatus.ACTIVE);
+                subscription.setStartDate(LocalDateTime.now());
+                subscription.setEndDate(LocalDateTime.now().plusDays(30));
+                subscriptionRepository.save(subscription);
+
+                log.info("Paynpro Subscription activated for Trade No: {}", tradeNo);
+            }
+        }
+
+        return ResponseEntity.ok("success");
     }
 }
