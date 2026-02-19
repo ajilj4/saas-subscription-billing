@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { API_BASE_URL } from '../../config';
 
-const API_URL = 'http://localhost:9000/api/admin/payouts';
+const API_URL = `${API_BASE_URL}/api/admin/payouts`;
 
 // Helper to get auth header
 const getAuthHeader = (thunkAPI) => {
@@ -77,7 +78,7 @@ export const getUsers = createAsyncThunk(
     async (_, thunkAPI) => {
         try {
             const config = getAuthHeader(thunkAPI);
-            const response = await axios.get('http://localhost:9000/api/admin/users', config);
+            const response = await axios.get(`${API_BASE_URL}/api/admin/users`, config);
             return response.data;
         } catch (error) {
             const message = error.response?.data?.message || error.message || error.toString();
