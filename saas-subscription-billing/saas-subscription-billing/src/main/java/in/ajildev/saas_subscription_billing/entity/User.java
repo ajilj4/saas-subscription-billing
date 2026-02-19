@@ -58,5 +58,5 @@ public class User {
     private String payoutIfsc;
     private String payoutBeneficiaryName;
     private String payoutBankName;
-
+    private String mobile;
 }

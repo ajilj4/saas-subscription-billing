@@ -2,6 +2,7 @@ package in.ajildev.saas_subscription_billing.controller;
 
 import in.ajildev.saas_subscription_billing.service.PaynProService;
 import in.ajildev.saas_subscription_billing.service.PayoutService;
+import in.ajildev.saas_subscription_billing.service.RazorpayService;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONObject;
 import org.springframework.http.ResponseEntity;
@@ -16,11 +17,31 @@ public class PayoutController {
 
     private final PayoutService payoutService;
     private final PaynProService paynProService;
+    private final RazorpayService razorpayService;
 
     @GetMapping("/balance")
     public ResponseEntity<?> getPayoutBalance() {
-        JSONObject response = paynProService.fetchBalance();
-        return ResponseEntity.ok(response.toMap());
+        Map<String, Object> balances = new java.util.HashMap<>();
+        try {
+            JSONObject pnpResponse = paynProService.fetchBalance();
+            balances.put("paynpro", pnpResponse.toMap());
+        } catch (Exception e) {
+            balances.put("paynpro", Map.of("error", e.getMessage()));
+        }
+
+        try {
+            JSONObject rzpResponse = razorpayService.fetchBalance();
+            balances.put("razorpay", rzpResponse.toMap());
+        } catch (Exception e) {
+            balances.put("razorpay", Map.of("error", e.getMessage()));
+        }
+
+        return ResponseEntity.ok(balances);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllPayouts() {
+        return ResponseEntity.ok(payoutService.getAllPayouts());
     }
 
     @PostMapping("/update-bank-details")
@@ -55,5 +76,18 @@ public class PayoutController {
     public ResponseEntity<?> getPayoutStatement(@RequestBody Map<String, String> request) {
         JSONObject response = paynProService.getStatement(request.get("startDate"), request.get("endDate"));
         return ResponseEntity.ok(response.toMap());
+    }
+
+    @PostMapping("/initiate-manual")
+    public ResponseEntity<?> initiateManualPayout(@RequestBody Map<String, Object> request) {
+        String email = (String) request.get("email");
+        java.math.BigDecimal amount = new java.math.BigDecimal(request.get("amount").toString());
+        String purpose = (String) request.get("purpose");
+        String gatewayStr = (String) request.get("gateway");
+        in.ajildev.saas_subscription_billing.enums.PaymentGateway gateway = gatewayStr != null
+                ? in.ajildev.saas_subscription_billing.enums.PaymentGateway.valueOf(gatewayStr.toUpperCase())
+                : null;
+
+        return ResponseEntity.ok(payoutService.initiateManualPayout(email, amount, purpose, gateway));
     }
 }

@@ -3,6 +3,7 @@ package in.ajildev.saas_subscription_billing.service;
 import in.ajildev.saas_subscription_billing.entity.Payout;
 import in.ajildev.saas_subscription_billing.security.PaynproUtil;
 import org.json.JSONObject;
+import reactor.core.publisher.Mono;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -61,41 +62,82 @@ public class PaynProService {
      * Initiate a Payout via PaynPro
      */
     public JSONObject initiatePayout(Payout payout) {
+        String amountStr = payout.getAmount().setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
+        String mobile = payout.getMobile() != null ? payout.getMobile() : "9999999999";
+        String vpa = ""; // Default empty for bank transfers
+        String txnType = "IMPS";
+
+        // Signature order as per sequential fields in doc:
+        // username, email_id, mob_no, amount, payout_ref, txn_type, vpa,
+        // recv_bank_ifsc, recv_name, recv_bank_name, purpose, recv_acc_no
         String signature = PaynproUtil.generateSignature(
                 secretKey,
-                payout.getBeneficiaryName(),
-                payout.getUser().getEmail(),
                 payout.getUser().getName(),
-                payout.getAmount().toString(),
+                payout.getUser().getEmail(),
+                mobile,
+                amountStr,
                 payout.getPayoutRef(),
-                "IMPS" // Defaulting to IMPS as per doc
-        );
+                txnType,
+                vpa,
+                payout.getIfsc(),
+                payout.getBeneficiaryName(),
+                payout.getBankName(),
+                payout.getPurpose(),
+                payout.getAccountNo());
 
         JSONObject request = new JSONObject();
         request.put("username", payout.getUser().getName());
         request.put("email_id", payout.getUser().getEmail());
-        request.put("mob_no", "0000000000"); // Should be taken from User if available
-        request.put("amount", payout.getAmount().toString());
+        request.put("mob_no", mobile);
+        request.put("amount", amountStr);
         request.put("payout_ref", payout.getPayoutRef());
-        request.put("txn_type", "IMPS");
+        request.put("txn_type", txnType);
+        request.put("vpa", vpa);
         request.put("recv_bank_ifsc", payout.getIfsc());
         request.put("recv_name", payout.getBeneficiaryName());
         request.put("recv_bank_name", payout.getBankName());
         request.put("purpose", payout.getPurpose());
         request.put("recv_acc_no", payout.getAccountNo());
         request.put("signature", signature);
+        request.put("notifyUrl", "https://test.indishoppe.in/api/payout/paynpro-payout-webhook-response");
 
-        String response = payoutWebClient.post()
-                .uri("/payout/v1/transfer")
-                .header("Content-Type", "application/json")
-                .header("X-APIKEY", apiKey)
-                .header("X-APISECRET", secretKey)
-                .bodyValue(request.toString())
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+        // Add UDF fields as empty strings to avoid potential 400s
+        request.put("udf1", "");
+        request.put("udf2", "");
+        request.put("udf3", "");
+        request.put("udf4", "");
+        request.put("udf5", "");
 
-        return new JSONObject(response);
+        log.info("Initiating PaynPro Payout for Ref: {}. Request: {}", payout.getPayoutRef(), request);
+
+        try {
+            String response = payoutWebClient.post()
+                    .uri("/payout/v1/transfer")
+                    .header("Content-Type", "application/json")
+                    .header("X-APIKEY", apiKey)
+                    .header("X-APISECRET", secretKey)
+                    .bodyValue(request.toString())
+                    .retrieve()
+                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), clientResponse -> {
+                        return clientResponse.bodyToMono(String.class).flatMap(body -> {
+                            log.error("PaynPro Payout API Error Body: {}", body);
+                            return Mono.error(
+                                    org.springframework.web.reactive.function.client.WebClientResponseException.create(
+                                            clientResponse.statusCode().value(),
+                                            clientResponse.statusCode().toString(),
+                                            clientResponse.headers().asHttpHeaders(),
+                                            body.getBytes(),
+                                            java.nio.charset.StandardCharsets.UTF_8));
+                        });
+                    })
+                    .bodyToMono(String.class)
+                    .block();
+
+            return new JSONObject(response);
+        } catch (Exception e) {
+            log.error("PaynPro Payout Exception: {}", e.getMessage());
+            throw e;
+        }
     }
 
     /**

@@ -25,11 +25,11 @@ public class Payout {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "subscription_id", nullable = false)
+    @JoinColumn(name = "subscription_id")
     private Subscription subscription;
 
     @Column(nullable = false)
@@ -54,6 +54,7 @@ public class Payout {
     private String ifsc;
     private String bankName;
     private String purpose;
+    private String mobile;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

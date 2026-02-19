@@ -26,6 +26,8 @@ public class WebhookController {
     private final RazorpayService razorpayService;
     private final PaymentRepository paymentRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final in.ajildev.saas_subscription_billing.repository.PayoutRepository payoutRepository;
+    private final in.ajildev.saas_subscription_billing.service.PayoutService payoutService;
 
     private final PaynProService paynProService;
 
@@ -68,10 +70,14 @@ public class WebhookController {
                 subscription.setStartDate(LocalDateTime.now());
 
                 // Set default duration (e.g., 30 days)
+                // Set default duration (e.g., 30 days)
                 subscription.setEndDate(LocalDateTime.now().plusDays(30));
                 subscriptionRepository.save(subscription);
 
-                log.info("Subscription activated for Order ID: {}", razorpayOrderId);
+                // Trigger Payout
+                payoutService.processPayoutForSubscription(subscription);
+
+                log.info("Subscription activated and Payout triggered for Order ID: {}", razorpayOrderId);
             }
         } else if ("payment.failed".equals(event)) {
             JSONObject paymentEntity = json.getJSONObject("payload").getJSONObject("payment").getJSONObject("entity");
@@ -82,6 +88,23 @@ public class WebhookController {
                 paymentRepository.save(p);
                 log.warn("Payment failed for Order ID: {}", razorpayOrderId);
             });
+        } else if (event.startsWith("payout.")) {
+            JSONObject payoutEntity = json.getJSONObject("payload").getJSONObject("payout").getJSONObject("entity");
+            String payoutRef = payoutEntity.optString("reference_id");
+            String status = payoutEntity.optString("status");
+
+            if (payoutRef != null) {
+                payoutRepository.findByPayoutRef(payoutRef).ifPresent(p -> {
+                    if ("processed".equals(status)) {
+                        p.setStatus(in.ajildev.saas_subscription_billing.enums.PayoutStatus.SUCCESS);
+                    } else if ("reversed".equals(status) || "rejected".equals(status) || "failed".equals(status)) {
+                        p.setStatus(in.ajildev.saas_subscription_billing.enums.PayoutStatus.FAILED);
+                    }
+                    p.setResponseJson(payload);
+                    payoutRepository.save(p);
+                    log.info("Razorpay Payout status updated for {}: {}", payoutRef, status);
+                });
+            }
         }
 
         return ResponseEntity.ok("Webhook processed successfully");
@@ -112,7 +135,10 @@ public class WebhookController {
                 subscription.setEndDate(LocalDateTime.now().plusDays(30));
                 subscriptionRepository.save(subscription);
 
-                log.info("Paynpro Subscription activated for Trade No: {}", tradeNo);
+                // Trigger Payout
+                payoutService.processPayoutForSubscription(subscription);
+
+                log.info("Paynpro Subscription activated and Payout triggered for Trade No: {}", tradeNo);
             }
         }
 
