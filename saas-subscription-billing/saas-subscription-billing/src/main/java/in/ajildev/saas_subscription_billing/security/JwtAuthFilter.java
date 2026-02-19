@@ -28,26 +28,31 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
+        final String path = request.getServletPath();
+
+        // Skip public endpoints
+        if (path.startsWith("/api/auth") || path.startsWith("/api/plans") || path.startsWith("/api/webhook")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         final String authHeader = request.getHeader("Authorization");
 
-        // Skip filter if no Bearer token is present
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        final String jwt = authHeader.substring(7); // Strip "Bearer "
+        final String jwt = authHeader.substring(7);
         final String userEmail;
 
         try {
             userEmail = jwtUtil.extractUsername(jwt);
         } catch (Exception e) {
-            // Invalid token — let the request proceed unauthenticated
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Only authenticate if not already authenticated
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
 
