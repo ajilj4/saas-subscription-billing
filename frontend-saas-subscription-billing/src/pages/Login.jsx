@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { login, reset } from '../features/auth/authSlice';
 import { LogIn, Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const Login = () => {
     const [formData, setFormData] = useState({
@@ -21,10 +22,11 @@ const Login = () => {
 
     useEffect(() => {
         if (isError) {
-            // Error handling can be a toast or a simple div
+            toast.error(message || 'Login failed');
         }
 
         if (isSuccess || user) {
+            toast.success('Logged in successfully!');
             navigate('/dashboard');
         }
 

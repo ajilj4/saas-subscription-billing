@@ -1,23 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getAllPayouts, fetchPayoutBalance, getUsers, initiateManualPayout, resetPayout } from '../features/payouts/payoutSlice';
+import { getAllPayouts, fetchPayoutBalance, initiateManualPayout, resetPayout, getUsers } from '../features/payouts/payoutSlice';
+import { Activity } from 'lucide-react';
+
 import DashboardNavbar from '../components/DashboardNavbar';
-import {
-    TrendingUp,
-    Users as UsersIcon,
-    Activity,
-    Banknote,
-    Clock,
-    CheckCircle2,
-    AlertCircle,
-    ArrowUpRight,
-    Search,
-    Filter,
-    Download,
-    Send,
-    User as UserIcon,
-    AlertTriangle
-} from 'lucide-react';
+import { Banknote, TrendingUp, UsersIcon, Clock, Send, CheckCircle2, AlertCircle, AlertTriangle, Search, Filter, Download, ArrowUpRight } from 'lucide-react';
 
 const AdminPayoutDashboard = () => {
     const dispatch = useDispatch();
@@ -36,13 +24,15 @@ const AdminPayoutDashboard = () => {
     }, [dispatch]);
 
     useEffect(() => {
-        if (isSuccess || isError) {
-            const timer = setTimeout(() => {
-                dispatch(resetPayout());
-            }, 5000);
-            return () => clearTimeout(timer);
+        if (isSuccess && message) {
+            toast.success(message);
+            dispatch(resetPayout());
         }
-    }, [isSuccess, isError, dispatch]);
+        if (isError) {
+            toast.error(message || 'Action failed');
+            dispatch(resetPayout());
+        }
+    }, [isSuccess, isError, message, dispatch]);
 
     const handleManualTransfer = (e) => {
         e.preventDefault();

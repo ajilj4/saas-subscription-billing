@@ -61,7 +61,7 @@ export const getPaymentHistory = createAsyncThunk(
     async (_, thunkAPI) => {
         try {
             const config = getAuthHeader(thunkAPI);
-            const response = await axios.get('http://localhost:9000/api/payments/me', config);
+            const response = await axios.get(`${API_BASE_URL}/api/payments/me`, config);
             return response.data;
         } catch (error) {
             const message = error.response?.data?.message || error.message || error.toString();

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { getPlans } from '../features/plans/planSlice';
 import { initiateSubscription, activateSubscription } from '../features/subscriptions/subscriptionSlice';
 import { Check, Zap, Shield, Loader2, AlertCircle } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const Pricing = () => {
     const dispatch = useDispatch();
@@ -20,6 +21,15 @@ const Pricing = () => {
     useEffect(() => {
         dispatch(getPlans());
     }, [dispatch]);
+
+    useEffect(() => {
+        if (plansError) {
+            toast.error(plansMessage || 'Failed to load plans');
+        }
+        if (subError) {
+            toast.error(subMessage || 'Subscription initiation failed');
+        }
+    }, [plansError, subError, plansMessage, subMessage]);
 
     const handleSubscription = (planId) => {
         navigate(`/checkout/${planId}`);

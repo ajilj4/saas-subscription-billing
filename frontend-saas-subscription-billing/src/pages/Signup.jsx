@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { register, reset } from '../features/auth/authSlice';
 import { UserPlus, Mail, Lock, User, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const Signup = () => {
     const [formData, setFormData] = useState({
@@ -22,7 +23,12 @@ const Signup = () => {
     );
 
     useEffect(() => {
+        if (isError) {
+            toast.error(message || 'Registration failed');
+        }
+
         if (isSuccess || user) {
+            toast.success('Account created successfully!');
             navigate('/dashboard');
         }
 

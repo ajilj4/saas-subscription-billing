@@ -5,6 +5,7 @@ import { getPlans } from '../features/plans/planSlice';
 import { initiateSubscription, activateSubscription, resetSubscription } from '../features/subscriptions/subscriptionSlice';
 import { CreditCard, ShieldCheck, CheckCircle2, Loader2, AlertCircle, ArrowLeft, Zap, Sparkles } from 'lucide-react';
 import { loadScript } from '../utils/loadScript';
+import { toast } from 'react-toastify';
 
 const Checkout = () => {
     const { planId } = useParams();
@@ -18,6 +19,12 @@ const Checkout = () => {
     const { user } = useSelector((state) => state.auth);
     const { isLoading, isError, message } = useSelector((state) => state.subscription);
 
+    useEffect(() => {
+        if (isError) {
+            toast.error(message || 'Something went wrong');
+        }
+    }, [isError, message]);
+
     const plan = plans.find((p) => p.id.toString() === planId);
 
     useEffect(() => {
@@ -26,7 +33,7 @@ const Checkout = () => {
         const initializeRazorpay = async () => {
             const res = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
             if (!res) {
-                alert('Razorpay SDK failed to load. Are you online?');
+                toast.error('Razorpay SDK failed to load. Are you online?');
                 return;
             }
             setScriptLoaded(true);
