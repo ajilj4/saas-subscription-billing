@@ -131,8 +131,17 @@ public class RazorpayService {
                 .retrieve()
                 .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), clientResponse -> {
                     return clientResponse.bodyToMono(String.class).flatMap(body -> {
-                        return reactor.core.publisher.Mono
-                                .error(new RuntimeException("Razorpay Payout API Error: " + body));
+                        String errorMessage = "Razorpay API Error";
+                        try {
+                            JSONObject errorJson = new JSONObject(body);
+                            if (errorJson.has("error")) {
+                                JSONObject innerError = errorJson.getJSONObject("error");
+                                errorMessage = innerError.optString("description", errorMessage);
+                            }
+                        } catch (Exception e) {
+                            // fallback to body if parsing fails
+                        }
+                        return reactor.core.publisher.Mono.error(new RuntimeException(errorMessage));
                     });
                 })
                 .bodyToMono(String.class)

@@ -121,13 +121,18 @@ public class PaynProService {
                     .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), clientResponse -> {
                         return clientResponse.bodyToMono(String.class).flatMap(body -> {
                             log.error("PaynPro Payout API Error Body: {}", body);
-                            return Mono.error(
-                                    org.springframework.web.reactive.function.client.WebClientResponseException.create(
-                                            clientResponse.statusCode().value(),
-                                            clientResponse.statusCode().toString(),
-                                            clientResponse.headers().asHttpHeaders(),
-                                            body.getBytes(),
-                                            java.nio.charset.StandardCharsets.UTF_8));
+                            String errorMessage = "PaynPro Payout failed";
+                            try {
+                                JSONObject errorJson = new JSONObject(body);
+                                if (errorJson.has("error")) {
+                                    errorMessage = errorJson.getString("error");
+                                } else if (errorJson.has("message")) {
+                                    errorMessage = errorJson.getString("message");
+                                }
+                            } catch (Exception e) {
+                                log.warn("Failed to parse PaynPro error body: {}", e.getMessage());
+                            }
+                            return Mono.error(new RuntimeException(errorMessage));
                         });
                     })
                     .bodyToMono(String.class)

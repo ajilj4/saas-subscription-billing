@@ -61,10 +61,16 @@ public class PayoutService {
 
         payout = payoutRepository.save(payout);
 
-        if (payout.getGateway() == PaymentGateway.PAYNPRO) {
-            initiatePaynProPayout(payout);
-        } else if (payout.getGateway() == PaymentGateway.RAZORPAY) {
-            initiateRazorpayPayout(payout);
+        try {
+            if (payout.getGateway() == PaymentGateway.PAYNPRO) {
+                initiatePaynProPayout(payout);
+            } else if (payout.getGateway() == PaymentGateway.RAZORPAY) {
+                initiateRazorpayPayout(payout);
+            }
+        } catch (Exception e) {
+            log.error("Automatic payout initiation failed for subscription {}: {}", subscription.getId(),
+                    e.getMessage());
+            // We don't re-throw here to avoid rolling back the subscription activation
         }
     }
 
@@ -83,11 +89,14 @@ public class PayoutService {
             } else if ("cancelled".equalsIgnoreCase(status) || "rejected".equalsIgnoreCase(status)) {
                 payout.setStatus(PayoutStatus.FAILED);
             }
+            payoutRepository.save(payout);
         } catch (Exception e) {
             log.error("Razorpay Payout failed to initiate: {}", e.getMessage());
             payout.setStatus(PayoutStatus.FAILED);
+            payout.setResponseJson(new JSONObject().put("error", e.getMessage()).toString());
+            payoutRepository.save(payout);
+            throw e;
         }
-        payoutRepository.save(payout);
     }
 
     private void initiatePaynProPayout(Payout payout) {
@@ -104,11 +113,14 @@ public class PayoutService {
             } else {
                 payout.setStatus(PayoutStatus.FAILED);
             }
+            payoutRepository.save(payout);
         } catch (Exception e) {
             log.error("PaynPro Payout failed to initiate: {}", e.getMessage());
             payout.setStatus(PayoutStatus.FAILED);
+            payout.setResponseJson(new JSONObject().put("error", e.getMessage()).toString());
+            payoutRepository.save(payout);
+            throw e;
         }
-        payoutRepository.save(payout);
     }
 
     private void savePayoutRecord(Subscription subscription, PayoutStatus status, String purpose) {
